@@ -32,4 +32,4 @@ npx prisma migrate dev
 npm run start
 ```
 
-<p>8. Check API endpoints ( ServerURL/api-docs )</p>
+<p>8. Check API endpoints ( in your browser, go to : http://localhost:3000/api-docs )</p>
