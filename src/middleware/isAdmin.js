@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { ForbiddenResourceException, UnauthorizedException } = require('../helpers/errorHandler');
+const { ForbiddenResourceException, UnauthorizedException } = require('./errorHandler');
 
 
 function isAdmin(req, res, next) {

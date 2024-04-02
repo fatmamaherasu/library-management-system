@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { Page } = require("../models/page")
-const { BadRequestException, NotFoundException } = require("../helpers/errorHandler")
+const { BadRequestException, NotFoundException } = require("../middleware/errorHandler")
 
 const prisma = new PrismaClient();
 

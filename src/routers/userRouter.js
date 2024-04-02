@@ -8,8 +8,8 @@ const {UserDTO, signupValidations, loginValidations, updateUserValidations} = re
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const isAdmin = require('../middleware/admin.js');
-const ensureAuthenticated = require('../middleware/auth.js');
+const isAdmin = require('../middleware/isAdmin.js');
+const ensureAuthenticated = require('../middleware/isAuth.js');
 
 
 router.post('/register', signupValidations, async (req, res, next) => {
@@ -110,6 +110,14 @@ router.patch('/me', ensureAuthenticated ,updateUserValidations, async (req, res,
         next(err)
     }
 })
+
+// /**
+//  * @swagger
+//  * /users:
+//  *   get:
+//  *     tags: [Users]
+//  *     summary: Get a list of users for admins
+//  */
 
 router.get('/', isAdmin, async (req, res, next)=>{
     try {

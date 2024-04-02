@@ -1,6 +1,6 @@
 const {PrismaClient} = require('@prisma/client');
 const { Page } = require("../models/page");
-const { NotFoundException, UnauthorizedException } = require('../helpers/errorHandler');
+const { NotFoundException, UnauthorizedException } = require('../middleware/errorHandler');
 const { use } = require('../routers/userRouter');
 
 const prisma = new PrismaClient();
