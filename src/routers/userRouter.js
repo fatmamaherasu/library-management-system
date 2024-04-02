@@ -11,7 +11,57 @@ const jwt = require('jsonwebtoken');
 const isAdmin = require('../middleware/isAdmin.js');
 const ensureAuthenticated = require('../middleware/isAuth.js');
 
+/**
+ *  @swagger
+ * components:
+ *   securitySchemes:
+ *      bearerAuth:            
+ *        type: http
+ *        scheme: bearer
+ *        bearerFormat: JWT
+ */
 
+
+
+/**
+ * @swagger
+ * /users/register:
+ *   post:
+ *     responses:
+ *        '200': 
+ *          description: success
+ *        '400': 
+ *          description: bad request
+ *        '404':
+ *          description: not found
+ *        '401': 
+ *          description: unauthorized
+ *        '403': 
+ *          description: forbidden resource
+ *     tags: [Users]
+ *     summary: Sign up
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *              - name
+ *              - email
+ *              - password
+ *           properties:
+ *              name:
+ *                  type: string
+ *              email:
+ *                  type: string
+ *              password: 
+ *                  type: string
+ *           example:
+ *              name: Fatma
+ *              email: "fatma.maher.elsayed@gmail.com"
+ *              password: "a1b2c3D@4"
+ */
 router.post('/register', signupValidations, async (req, res, next) => {
     try {
         const errors = validationResult(req)
@@ -42,6 +92,42 @@ router.post('/register', signupValidations, async (req, res, next) => {
     }
 })
 
+
+/**
+ * @swagger
+ * /users/login:
+ *   post:
+ *     responses:
+ *        '200': 
+ *          description: success
+ *        '400': 
+ *          description: bad request
+ *        '404':
+ *          description: not found
+ *        '401': 
+ *          description: unauthorized
+ *        '403': 
+ *          description: forbidden resource
+ *     tags: [Users]
+ *     summary: Login
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *              - email
+ *              - password
+ *           properties:
+ *              email:
+ *                  type: string
+ *              password: 
+ *                  type: string
+ *           example:
+ *              email: "fatma.maher.elsayed@gmail.com"
+ *              password: "a1b2c3D@4"
+ */
 router.post('/login', loginValidations, async (req, res, next) => {
     try {
         const errors = validationResult(req)
@@ -75,6 +161,34 @@ router.post('/login', loginValidations, async (req, res, next) => {
     }
 })
 
+
+/**
+ * @swagger
+ * /users/admin/{id}:
+ *   patch:
+ *     responses:
+ *        '200': 
+ *          description: success
+ *        '400': 
+ *          description: bad request
+ *        '404':
+ *          description: not found
+ *        '401': 
+ *          description: unauthorized
+ *        '403': 
+ *          description: forbidden resource
+ *     security:
+ *      - bearerAuth: []
+ *     tags: [Users]
+ *     summary: Upgrade user to admin for admins
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The user id
+ */
 router.patch('/admin/:id', isAdmin, async (req, res, next) => {
     try {
         await userController.addAdmin(req.params.id);
@@ -86,6 +200,26 @@ router.patch('/admin/:id', isAdmin, async (req, res, next) => {
 })
 
 
+/**
+ * @swagger
+ * /users/me:
+ *   get:
+ *     responses:
+ *        '200': 
+ *          description: success
+ *        '400': 
+ *          description: bad request
+ *        '404':
+ *          description: not found
+ *        '401': 
+ *          description: unauthorized
+ *        '403': 
+ *          description: forbidden resource
+ *     security:
+ *      - bearerAuth: []
+ *     tags: [Users]
+ *     summary: Get profile of logged in user
+ */
 router.get('/me', ensureAuthenticated, async (req, res, next)=>{
     try {
         const user = await userController.getUserById(req.user.id);
@@ -96,6 +230,50 @@ router.get('/me', ensureAuthenticated, async (req, res, next)=>{
 })
 
 
+/**
+ * @swagger
+ * /users/me/{id}:
+ *   patch:
+ *     responses:
+ *        '200': 
+ *          description: success
+ *        '400': 
+ *          description: bad request
+ *        '404':
+ *          description: not found
+ *        '401': 
+ *          description: unauthorized
+ *        '403': 
+ *          description: forbidden resource
+ *     security:
+ *      - bearerAuth: []
+ *     tags: [Users]
+ *     summary: Edit profile for logged in user
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The user id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *              - name
+ *              - phone
+ *           properties:
+ *              name:
+ *                  type: string
+ *              phone: 
+ *                  type: string
+ *           example:
+ *              name: Fatma
+ *              phone: "1111111111"
+ */
 router.patch('/me', ensureAuthenticated ,updateUserValidations, async (req, res, next)=>{
 
     try {
@@ -111,14 +289,27 @@ router.patch('/me', ensureAuthenticated ,updateUserValidations, async (req, res,
     }
 })
 
-// /**
-//  * @swagger
-//  * /users:
-//  *   get:
-//  *     tags: [Users]
-//  *     summary: Get a list of users for admins
-//  */
 
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     responses:
+ *        '200': 
+ *          description: success
+ *        '400': 
+ *          description: bad request
+ *        '404':
+ *          description: not found
+ *        '401': 
+ *          description: unauthorized
+ *        '403': 
+ *          description: forbidden resource
+ *     security:
+ *      - bearerAuth: []
+ *     tags: [Users]
+ *     summary: Get a list of users for admins
+ */
 router.get('/', isAdmin, async (req, res, next)=>{
     try {
         const users = await userController.getAllUsers(req.query);
@@ -128,6 +319,34 @@ router.get('/', isAdmin, async (req, res, next)=>{
     }
 })
 
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     responses:
+ *        '200': 
+ *          description: success
+ *        '400': 
+ *          description: bad request
+ *        '404':
+ *          description: not found
+ *        '401': 
+ *          description: unauthorized
+ *        '403': 
+ *          description: forbidden resource
+ *     security:
+ *      - bearerAuth: []
+ *     tags: [Users]
+ *     summary: Get a user by id for admins
+ *   parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The user id
+ */
 router.get('/:id', isAdmin, async (req, res, next)=>{
     try {
         const user = await userController.getUserById(req.params.id);
@@ -137,6 +356,34 @@ router.get('/:id', isAdmin, async (req, res, next)=>{
     }
 })
 
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     responses:
+ *        '200': 
+ *          description: success
+ *        '400': 
+ *          description: bad request
+ *        '404':
+ *          description: not found
+ *        '401': 
+ *          description: unauthorized
+ *        '403': 
+ *          description: forbidden resource
+ *     security:
+ *      - bearerAuth: []
+ *     tags: [Users]
+ *     summary: Delete a user by id for admins
+ *   parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The user id
+ */
 router.delete('/:id', isAdmin, async (req, res, next)=>{
     try {
         const user = await userController.deleteUser(req.params.id);
