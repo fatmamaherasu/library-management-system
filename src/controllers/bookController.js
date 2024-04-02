@@ -10,7 +10,8 @@ async function getAllBooks(queries) {
     const filter = {
         ...(search && search.title && { title: { contains: search.title, mode: 'insensitive' } }),
         ...(search && search.author && { author: { contains: search.author, mode: 'insensitive' } }),
-        ...(search && search.ISBN && { ISBN: search.ISBN })
+        ...(search && search.ISBN && { ISBN: search.ISBN }),
+        isDeleted: false
     }
     const { result: books, ...rest} = await page.filter(filter).exec()
     return {
@@ -22,7 +23,10 @@ async function getAllBooks(queries) {
 
 async function getBookById (id) {
     const book = await prisma.book.findUnique({
-        where: {id: parseInt(id)}
+        where: {id: parseInt(id)},
+        include: {
+            timesBorrowed: true
+        }
     })
     return book
 }
@@ -34,12 +38,28 @@ async function addBook(bookData) {
 }
 
 async function updateBook(id, bookData) {
-    await prisma.book.update({
+    const book = await prisma.book.findUnique({
+        where: {
+            id: parseInt(id),
+            isDeleted: false
+        }
+    })
+    if (!book) throw new NotFoundException("Book not found")
+    if(bookData.location) {
+        const location = await prisma.book.findUnique({
+            where: {
+                location: bookData.location
+            }
+        })
+        if(location) throw new BadRequestException("Location is already used")
+    }
+    return await prisma.book.update({
         where: {
             id: parseInt(id)
         },
         data: {
-            bookData
+            quantity: bookData.quantity? bookData.quantity : undefined,
+            location: bookData.location? bookData.location : undefined
         }
     })
 }
@@ -68,7 +88,7 @@ async function markOverdueBooks() {
     const now = new Date()
     return await prisma.checkout.updateMany({
         where: {
-            dueDate: {gte: now.getDate()},
+            dueDate: {lte: now},
             returned: false,
         },
         data: {
@@ -91,8 +111,18 @@ async function checkoutBook(userId, bookId) {
     const checked = await prisma.checkout.findMany({
         where: {
             userId,
+            returned: false
         },
     })
+
+    const book = await prisma.book.findUnique({
+        where: {
+            id: parseInt(bookId),
+            isDeleted: false
+        }
+    })
+
+    if (!book) throw new NotFoundException ("Book not found")
 
     if (checked.length == 3) {
         throw new BadRequestException("You already have 3 books checked out")
@@ -107,11 +137,11 @@ async function checkoutBook(userId, bookId) {
                 data: {
                     checked: true,
                     checkedAt: new Date(),
-                    dueDate: new Date(Date.now() + ( 1000 * 60 * 60 * 24 * 7))
+                    dueDate: new Date(Date.now() + ( 1000 * 60 * 10)) //Due date is customized for testing purposes (10 minutes after checking)
                 }
             })
         }
-        else if (book.overdue == true) {
+        else if (book.overdue == true && book.returned == false) {
             throw new BadRequestException("You have an overdue book, please return it first")
         }
     }
@@ -120,7 +150,7 @@ async function checkoutBook(userId, bookId) {
         data: {
             bookId: parseInt(bookId),
             userId,
-            dueDate: new Date(Date.now() + ( 1000 * 60 * 60 * 24 * 7))
+            dueDate: new Date(Date.now() + ( 1000 * 60 * 10)) //Due date is customized for testing purposes (10 minutes after borrowing)
         }
     })
 }
@@ -139,13 +169,34 @@ async function returnBook(userId, checkoutId) {
             id: parseInt(checkoutId)
         },
         data: {
-            returned: true
+            returned: true,
+            returnedAt: new Date(),
+            overdue: false
         }
     })
 }
 
 async function deleteBook(id) {
-    await prisma.book.delete({
+    const book = await prisma.book.findUnique({
+        where: {
+            id: parseInt(id)
+        },
+        include: {
+            timesBorrowed: true
+        }
+    })
+    if (!book) throw new NotFoundException("Book not found")
+    if(book.timesBorrowed.length > 0) {
+        return await this.book.update({
+            where: {
+                id: parseInt(id)
+            },
+            data: {
+                isDeleted: true
+            }
+        })
+    }
+    return await prisma.book.delete({
         where: {
             id: parseInt(id)
         }

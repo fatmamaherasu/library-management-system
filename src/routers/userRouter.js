@@ -29,7 +29,7 @@ router.post('/register', signupValidations, async (req, res, next) => {
         const salt = await bcrypt.genSalt();
 
         const user = new UserDTO({
-            password: bcrypt.hash(password, salt),
+            password: await bcrypt.hash(password, salt),
             email,
             ...rest
         })
@@ -132,7 +132,7 @@ router.get('/:id', isAdmin, async (req, res, next)=>{
 router.delete('/:id', isAdmin, async (req, res, next)=>{
     try {
         const user = await userController.deleteUser(req.params.id);
-        return res.status(200).json({user: user});
+        return res.status(200).json({message: "User deleted sucessfully", deletedUser: user});
     } catch (err) {
         next(err)
     }

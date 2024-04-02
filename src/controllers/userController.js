@@ -1,6 +1,7 @@
 const {PrismaClient} = require('@prisma/client');
 const { Page } = require("../models/page");
 const { NotFoundException, UnauthorizedException } = require('../helpers/errorHandler');
+const { use } = require('../routers/userRouter');
 
 const prisma = new PrismaClient();
 
@@ -10,6 +11,7 @@ async function getAllUsers(queries) {
     const filter = {
         ...(search && search.name && { name: { contains: search.name, mode: 'insensitive' } }),
         ...(search && search.email && { email: { contains: search.email, mode: 'insensitive' } }),
+        isDeleted: false
     }
     const { result: users, ...rest} = await page.filter(filter).exec()
     return {
@@ -20,7 +22,8 @@ async function getAllUsers(queries) {
 
 async function getUserById (id) {
     return await prisma.user.findUnique({
-        where: {id}
+        where: {id},
+        include: {booksBorrowed: true}
     })
 }
 
@@ -39,7 +42,8 @@ async function addUser(userData) {
 async function addAdmin(id) {
     const user = await prisma.user.findUnique({
         where: {
-            id
+            id,
+            isDeleted: false
         }
     })
     if (!user) throw new NotFoundException("User not found")
@@ -54,9 +58,10 @@ async function addAdmin(id) {
 }
 
 async function updateUser(id, userData) {
-    const user = await prisma.findUnique({
+    const user = await prisma.user.findUnique({
         where: {
-            id
+            id,
+            isDeleted: false
         }
     })
     if (!user) throw new NotFoundException("User not found")
@@ -65,7 +70,8 @@ async function updateUser(id, userData) {
             id
         },
         data: {
-            userData
+            name: userData.name? userData.name : undefined,
+            phone: userData.phone? userData.phone : undefined
         }
     })
 }
@@ -74,10 +80,23 @@ async function deleteUser(id) {
     const user = await prisma.user.findUnique({
         where: { 
             id 
+        },
+        include: {
+            booksBorrowed: true
         }
     })
     if (!user) throw new NotFoundException("User not found")
     if (user.isAdmin) throw new UnauthorizedException("Admins cannot be deleted")
+    if(user.booksBorrowed.length > 0) {
+        return await prisma.user.update({
+            where: {
+                id
+            },
+            data: {
+                isDeleted: true
+            }
+        })
+    }
     return await prisma.user.delete({
         where: {
             id

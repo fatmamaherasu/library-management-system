@@ -15,17 +15,17 @@ class UserDTO {
   }
 
   const loginValidations = [
-    body('email', 'Email cannot be empty').notEmpty(),
-    body('email', 'Invalid email').isEmail(),
-    body('password', 'The minimum password length is 8 characters').isLength({min: 8}),
+    body('email').notEmpty(),
+    body('email').isEmail(),
+    body('password').isLength({min: 8}),
   ]
   
 
   const signupValidations = [
-    body('name').notEmpty(),
-    body('email').isEmail(),
-    body('password').notEmpty(),
-    body('password').isLength({min: 6}),
+    body('name', 'Name cannot be empty').notEmpty(),
+    body('email', 'Invalid email').isEmail(),
+    body('password', 'Password must be at least 8 character containing uppercase letters, lowercase letters, numbers and special characters.')
+    .isLength({min: 8}).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,}$/),
     body("phone").isAlphanumeric().optional()
   ]
 

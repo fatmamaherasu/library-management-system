@@ -37,7 +37,7 @@ router.get('/checkouts', isAdmin, pageValidations, async (req, res, next)=>{
     }
 })
 
-router.get('/overdue', isAdmin,  pageValidations, async (req, res, next)=>{
+router.get('/overdue', isAdmin, pageValidations, async (req, res, next)=>{
     try {
         const checkouts = await bookController.getOverdueBooks(req.query)
         return res.status(200).json({checkouts})
@@ -55,21 +55,35 @@ router.get('/:id', async (req, res, next)=>{
     }
 })
 
-router.delete('/:id', async (req, res, next)=>{
+router.delete('/:id', isAdmin, async (req, res, next)=>{
     try {
-        await bookController.deleteBook(parseInt(req.params.id))
+        const book = await bookController.deleteBook(parseInt(req.params.id))
+        return res.status(200).json({message: "Book deleted sucessfully", deletedBook: book});
     } catch (err) {
         next(err)
     }
 })
 
-router.post('/:id', createBookValidations, async (req, res, next)=>{
+router.post('/:id', isAdmin, createBookValidations, async (req, res, next)=>{
     try { 
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
             return res.status(422).json({errors: errors.array()})
         }
         const book = await bookController.addBook(new BookDTO(req.body))
+        return res.status(200).json({book: book})
+    } catch (err) {
+        next(err)
+    }
+})
+
+router.patch('/edit/:id', isAdmin, updateBookValidations, async (req, res, next)=>{
+    try { 
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            return res.status(422).json({errors: errors.array()})
+        }
+        const book = await bookController.updateBook(req.params.id, req.body)
         return res.status(200).json({book: book})
     } catch (err) {
         next(err)
@@ -100,9 +114,8 @@ router.patch('/return/:id', ensureAuthenticated, async (req, res, next)=>{
     
 })
 
-cron.schedule('0 0 * * *', () => {
+cron.schedule('0 * * * * *', () => {
     bookController.markOverdueBooks()
-    console.log("cron job executed")
 });
 
   
